@@ -1,47 +1,73 @@
 /* eslint-disable import/no-unresolved*/
-import prisma from '../lib/prisma.js'
-import { getModelByName } from '@adminjs/prisma'
-import { ComponentLoader } from 'adminjs'
+import prisma from "../lib/prisma.js";
+import { getModelByName } from "@adminjs/prisma";
+import { ComponentLoader } from "adminjs";
 import {
   targetRelationSettingsFeature,
   owningRelationSettingsFeature,
-} from '@adminjs/relations'
-import path from 'path'
-import { fileURLToPath } from 'url'
-import camelCase from 'lodash/camelCase.js'
-import lowerCase from 'lodash/lowerCase.js'
-import { MODELS } from '../../src/utils/constants.js'
-import resourceOptions from './utils/resourceOptions.js'
-import {
-  serializeFileResponse,
-  serializeFilesResponse,
-} from './utils/serializers.js'
+} from "@adminjs/relations";
+import path from "path";
+import { fileURLToPath } from "url";
+import camelCase from "lodash/camelCase.js";
+import lowerCase from "lodash/lowerCase.js";
+import { MODELS } from "../../src/utils/constants.js";
+import resourceOptions from "./utils/resourceOptions.js";
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
+const serializeFileResponse = (originalResponse) => {
+  const { record } = originalResponse;
+  return {
+    ...originalResponse,
+    record: {
+      ...record,
+      params: serializeFileParams(record.params),
+    },
+  };
+};
+
+const serializeFilesResponse = (originalResponse) => {
+  return {
+    ...originalResponse,
+    records: originalResponse.records.map((record) => {
+      return {
+        ...record,
+        params: serializeFileParams(record.params),
+      };
+    }),
+  };
+};
+
+const serializeFileParams = (params) => {
+  return {
+    ...params,
+    sizeBytes: params.sizeBytes?.toString(),
+  };
+};
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const RELATIONSHIP_TYPE = {
-  ONE_TO_MANY: 'one-to-many',
-  MANY_TO_MANY: 'many-to-many',
-}
+  ONE_TO_MANY: "one-to-many",
+  MANY_TO_MANY: "many-to-many",
+};
 
 export class Admin {
   constructor() {
-    this.componentLoader = new ComponentLoader()
+    this.componentLoader = new ComponentLoader();
     this.components = {
       CustomDashboard: this.componentLoader.add(
-        'CustomDashboard',
-        path.resolve(__dirname, 'views/Dashboard')
+        "CustomDashboard",
+        path.resolve(__dirname, "views/Dashboard")
       ),
       UserName: this.componentLoader.add(
-        'UserName',
-        path.resolve(__dirname, 'components/UserName')
+        "UserName",
+        path.resolve(__dirname, "components/UserName")
       ),
       AuthorizationForm: this.componentLoader.add(
-        'AuthorizationForm',
-        path.resolve(__dirname, 'forms/AuthorizationForm')
+        "AuthorizationForm",
+        path.resolve(__dirname, "forms/AuthorizationForm")
       ),
-    }
+    };
   }
 
   createDefaultResource(model) {
@@ -51,7 +77,7 @@ export class Admin {
         client: prisma,
       },
       options: resourceOptions.defaultProperties,
-    }
+    };
   }
 
   getResources = () => {
@@ -60,8 +86,8 @@ export class Admin {
       this.createFolderResource(),
       this.createFileResource(),
       this.createAuthorizationResource(),
-    ]
-  }
+    ];
+  };
 
   getAdminOptions = () => {
     return {
@@ -70,11 +96,11 @@ export class Admin {
         component: this.components.CustomDashboard,
       },
       componentLoader: this.componentLoader,
-    }
-  }
+    };
+  };
 
   createFileResource = () => {
-    const defaults = this.createDefaultResource(MODELS.FILE)
+    const defaults = this.createDefaultResource(MODELS.FILE);
 
     return {
       ...defaults,
@@ -104,8 +130,8 @@ export class Admin {
           },
         ]),
       ],
-    }
-  }
+    };
+  };
 
   createFolderResource = () => {
     return {
@@ -132,8 +158,8 @@ export class Admin {
           },
         ]),
       ],
-    }
-  }
+    };
+  };
 
   createUserResource = () => {
     return {
@@ -150,8 +176,8 @@ export class Admin {
           },
         ]),
       ],
-    }
-  }
+    };
+  };
 
   createAuthorizationResource = () => {
     return {
@@ -177,11 +203,11 @@ export class Admin {
           },
         },
       },
-    }
-  }
+    };
+  };
 
   createSignInResource = () => {
-    const defaults = this.createDefaultResource(MODELS.SIGN_IN)
+    const defaults = this.createDefaultResource(MODELS.SIGN_IN);
 
     return {
       ...defaults,
@@ -194,28 +220,28 @@ export class Admin {
         },
       },
       ...this.createTargetResourceFeature(),
-    }
-  }
+    };
+  };
 
   createTargetResourceFeature = () => {
     return {
       features: [targetRelationSettingsFeature()],
-    }
-  }
+    };
+  };
 
   // targetModels is array of objects in format { modelName: 'User', relationshipType: 'one-to-many' }
   createOwningRelationSettingsFeature = (parentModel, targetModels) => {
-    let relationsObj = {}
+    let relationsObj = {};
     targetModels.forEach(({ modelName, relationshipType }) => {
-      const key = camelCase(modelName) + 's'
+      const key = camelCase(modelName) + "s";
       relationsObj[key] = {
         type: relationshipType,
         target: {
           joinKey: lowerCase(parentModel),
           resourceId: modelName,
         },
-      }
-    })
+      };
+    });
 
     return owningRelationSettingsFeature({
       componentLoader: this.componentLoader,
@@ -223,7 +249,6 @@ export class Admin {
       relations: {
         ...relationsObj,
       },
-    })
-  }
-
+    });
+  };
 }
